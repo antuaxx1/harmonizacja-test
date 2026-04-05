@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ocena harmonizacji melodii</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --muted: #687081;
+      --text: #171923;
+      --line: #e7eaf1;
+      --accent: #111827;
+      --accent-2: #2563eb;
+      --accent-soft: #eff6ff;
+      --danger: #dc2626;
+      --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #f8f9fc 0%, #f2f5fb 100%);
+      color: var(--text);
+    }
+
+    a { color: var(--accent-2); }
+
+    .shell {
+      width: min(1180px, calc(100% - 24px));
+      margin: 24px auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(231, 234, 241, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #f2f4f8;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #3b4353;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    .title { font-size: clamp(30px, 4vw, 44px); line-height: 1.05; margin-bottom: 14px; }
+    .lead { color: var(--muted); font-size: 17px; line-height: 1.75; max-width: 860px; }
+
+    .intro-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 22px;
+      border-radius: 22px;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+    }
+
+    .panel h3 {
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    .small {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .scale-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 18px;
+      margin-top: 14px;
+      color: #394255;
+      font-size: 15px;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+    }
+
+    select {
+      min-height: 54px;
+      padding: 0 16px;
+      appearance: none;
+    }
+
+    textarea {
+      min-height: 120px;
+      padding: 14px 16px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 700;
+      transition: transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+    .primary { background: var(--accent); color: white; }
+    .secondary { background: #eef2f7; color: #243041; }
+    .danger { background: #fff1f2; color: var(--danger); border: 1px solid #fecdd3; }
+
+    .hidden { display: none !important; }
+
+    .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .kicker {
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .progress-card {
+      min-width: 260px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .bar {
+      width: 100%;
+      height: 10px;
+      background: #e9edf4;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #111827 0%, #2563eb 100%);
+      border-radius: 999px;
+      width: 0%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .section-card { padding: 22px; }
+    .section-card h2 { font-size: 22px; margin-bottom: 14px; }
+    .stack { display: grid; gap: 16px; }
+
+    .box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .box-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    iframe, audio {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    iframe.pdf {
+      height: 420px;
+    }
+
+    .placeholder {
+      padding: 18px;
+      background: #fff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .question {
+      background: #fafbff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .question-title {
+      font-weight: 700;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .choice-grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .choice {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: white;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .choice input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .choice span {
+      display: block;
+      padding: 14px 10px;
+      font-weight: 700;
+    }
+
+    .choice input:checked + span {
+      background: var(--accent-soft);
+      color: #1d4ed8;
+      box-shadow: inset 0 0 0 1px #bfdbfe;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .summary-item {
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .summary-item .label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .summary-item .value {
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .intro-grid, .grid, .summary-grid { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+    }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 16px, 100%); margin: 12px auto 24px; }
+      .hero, .section-card { padding: 18px; }
+      .choice-grid { grid-template-columns: repeat(5, 1fr); }
+      .choice span { padding: 12px 8px; font-size: 14px; }
+      .scale-grid { grid-template-columns: 1fr; }
+      iframe.pdf { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section id="screen-intro" class="card hero"></section>
+    <section id="screen-melody" class="hidden"></section>
+    <section id="screen-summary" class="hidden"></section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'harmonization-survey-static-v1';
+
+    const RESPONDENT_TYPES = [
+      'aktywny zawodowo muzyk',
+      'student lub absolwent akademii muzycznej',
+      'uczeń lub absolwent szkoły muzycznej',
+      'osoba bez wykształcenia muzycznego, ale regularnie słuchająca muzyki',
+      'osoba bez wykształcenia muzycznego'
+    ];
+
+    const QUESTIONS = [
+      'Czy harmonizacja wydaje się poprawna?',
+      'Czy harmonizacja jest ciekawa muzycznie?',
+      'Czy harmonizacja brzmi naturalnie?',
+      'Czy harmonizacja pasuje do melodii?'
+    ];
+
+    const MELODIES = [
+      {
+        id: 1,
+        title: 'Melodia 1',
+        audioType: 'soundcloud',
+        audioUrl: 'https://soundcloud.com/antoni-pietak/supergod_rest_ye_merry?si=dea23185192745039e13eba63dbf8432&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
+        pdfUrl: ''
+      },
+      { id: 2, title: 'Melodia 2', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 3, title: 'Melodia 3', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 4, title: 'Melodia 4', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 5, title: 'Melodia 5', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 6, title: 'Melodia 6', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 7, title: 'Melodia 7', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 8, title: 'Melodia 8', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 9, title: 'Melodia 9', audioType: 'mp3', audioUrl: '', pdfUrl: '' },
+      { id: 10, title: 'Melodia 10', audioType: 'mp3', audioUrl: '', pdfUrl: '' }
+    ];
+
+    const state = loadState();
+    render();
+
+    function defaultAnswers() {
+      const out = {};
+      MELODIES.forEach(m => {
+        out[m.id] = { ratings: {1:'',2:'',3:'',4:''}, human: '', note: '' };
+      });
+      return out;
+    }
+
+    function loadState() {
+      const empty = { screen: 'intro', respondentType: '', step: 0, generalNote: '', answers: defaultAnswers() };
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return empty;
+        const parsed = JSON.parse(raw);
+        return {
+          ...empty,
+          ...parsed,
+          answers: { ...defaultAnswers(), ...(parsed.answers || {}) }
+        };
+      } catch {
+        return empty;
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function soundCloudEmbed(url) {
+      return 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&color=%23111827&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setScreen(name) {
+      state.screen = name;
+      saveState();
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function startSurvey() {
+      if (!state.respondentType) return;
+      state.screen = 'melody';
+      state.step = 0;
+      saveState();
+      render();
+    }
+
+    function progressPercent() {
+      return ((state.step + 1) / MELODIES.length) * 100;
+    }
+
+    function currentMelody() {
+      return MELODIES[state.step];
+    }
+
+    function canGoNext() {
+      const melody = currentMelody();
+      const entry = state.answers[melody.id];
+      return QUESTIONS.every((_, idx) => entry.ratings[idx + 1]) && !!entry.human;
+    }
+
+    function updateRating(melodyId, index, value) {
+      state.answers[melodyId].ratings[index] = value;
+      saveState();
+      renderMelody();
+    }
+
+    function updateHuman(melodyId, value) {
+      state.answers[melodyId].human = value;
+      saveState();
+      renderMelody();
+    }
+
+    function updateNote(melodyId, value) {
+      state.answers[melodyId].note = value;
+      saveState();
+    }
+
+    function nextStep() {
+      if (!canGoNext()) return;
+      if (state.step >= MELODIES.length - 1) {
+        setScreen('summary');
+        return;
+      }
+      state.step += 1;
+      saveState();
+      render();
+    }
+
+    function prevStep() {
+      if (state.step <= 0) {
+        setScreen('intro');
+        return;
+      }
+      state.step -= 1;
+      saveState();
+      render();
+    }
+
+    function completedCount() {
+      return MELODIES.filter(m => {
+        const e = state.answers[m.id];
+        return QUESTIONS.every((_, idx) => e.ratings[idx + 1]) && !!e.human;
+      }).length;
+    }
+
+    function exportJSON() {
+      const payload = {
+        respondentType: state.respondentType,
+        submittedAt: new Date().toISOString(),
+        generalNote: state.generalNote,
+        melodies: MELODIES.map(m => ({ melodyId: m.id, title: m.title, ...state.answers[m.id] }))
+      };
+      downloadFile('odpowiedzi_harmonizacja.json', JSON.stringify(payload, null, 2), 'application/json');
+    }
+
+    function exportCSV() {
+      const header = ['respondentType', 'generalNote'];
+      MELODIES.forEach(m => {
+        header.push(
+          `${m.title}_poprawna`,
+          `${m.title}_ciekawa`,
+          `${m.title}_naturalna`,
+          `${m.title}_pasuje`,
+          `${m.title}_czlowiek`,
+          `${m.title}_uwagi`
+        );
+      });
+      const row = [jsonCell(state.respondentType), jsonCell(state.generalNote)];
+      MELODIES.forEach(m => {
+        const e = state.answers[m.id];
+        row.push(
+          jsonCell(e.ratings[1] || ''),
+          jsonCell(e.ratings[2] || ''),
+          jsonCell(e.ratings[3] || ''),
+          jsonCell(e.ratings[4] || ''),
+          jsonCell(e.human || ''),
+          jsonCell(e.note || '')
+        );
+      });
+      downloadFile('odpowiedzi_harmonizacja.csv', header.join(',') + '\n' + row.join(','), 'text/csv;charset=utf-8;');
+    }
+
+    function jsonCell(value) {
+      return JSON.stringify(String(value ?? ''));
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetSurvey() {
+      localStorage.removeItem(STORAGE_KEY);
+      state.screen = 'intro';
+      state.respondentType = '';
+      state.step = 0;
+      state.generalNote = '';
+      state.answers = defaultAnswers();
+      render();
+    }
+
+    function render() {
+      document.getElementById('screen-intro').classList.toggle('hidden', state.screen !== 'intro');
+      document.getElementById('screen-melody').classList.toggle('hidden', state.screen !== 'melody');
+      document.getElementById('screen-summary').classList.toggle('hidden', state.screen !== 'summary');
+      renderIntro();
+      if (state.screen === 'melody') renderMelody();
+      if (state.screen === 'summary') renderSummary();
+    }
+
+    function renderIntro() {
+      const el = document.getElementById('screen-intro');
+      el.innerHTML = `
+        <div class="badge-row">
+          <span class="badge">Test harmonizacji</span>
+          <span class="badge">10 melodii</span>
+          <span class="badge">wersja statyczna</span>
+        </div>
+        <h1 class="title">Ocena harmonizacji melodii</h1>
+        <p class="lead">
+          Przed Tobą 10 melodii wzbogaconych o warstwę harmoniczną. Skup się przede wszystkim na relacji harmonii do melodii,
+          a nie na samym brzmieniu instrumentów. Każdą próbkę oceniasz w czterech pytaniach w skali 1–5, dodatkowo zaznaczasz,
+          czy Twoim zdaniem harmonizację wykonał człowiek, i możesz dopisać własne uwagi.
+        </p>
+        <div class="intro-grid">
+          <div class="panel">
+            <h3>Skala ocen 1–5</h3>
+            <div class="scale-grid">
+              <div>1 – zdecydowanie nie</div>
+              <div>2 – raczej nie</div>
+              <div>3 – trudno powiedzieć</div>
+              <div>4 – raczej tak</div>
+              <div>5 – zdecydowanie tak</div>
+            </div>
+            <div style="height:18px"></div>
+            <label class="field-label" for="respondentType">Która z poniższych odpowiedzi najlepiej Cię opisuje?</label>
+            <select id="respondentType">
+              <option value="">Wybierz grupę respondentów</option>
+              ${RESPONDENT_TYPES.map(type => `<option value="${escapeHtml(type)}" ${state.respondentType === type ? 'selected' : ''}>${escapeHtml(type)}</option>`).join('')}
+            </select>
+            <div class="actions">
+              <button class="primary" id="startButton" ${state.respondentType ? '' : 'disabled'}>Rozpocznij test</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Jak to działa</h3>
+            <p class="small">1. Wybierasz grupę respondentów.</p>
+            <p class="small">2. Dla każdej melodii odsłuchujesz nagranie i opcjonalnie otwierasz zapis nutowy.</p>
+            <p class="small">3. Uzupełniasz ocenę i przechodzisz dalej.</p>
+            <p class="small">4. Na końcu możesz pobrać odpowiedzi jako JSON lub CSV.</p>
+            <p class="footer-note">Ta wersja zapisuje odpowiedzi lokalnie w przeglądarce. Jeśli chcesz później zbierać wyniki od wielu osób do jednego miejsca, można ją podłączyć do formularza lub prostego backendu.</p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('respondentType').addEventListener('change', (e) => {
+        state.respondentType = e.target.value;
+        saveState();
+        renderIntro();
+      });
+
+      document.getElementById('startButton').addEventListener('click', startSurvey);
+    }
+
+    function renderMelody() {
+      const melody = currentMelody();
+      const entry = state.answers[melody.id];
+      const el = document.getElementById('screen-melody');
+      el.innerHTML = `
+        <div class="topbar">
+          <div>
+            <div class="kicker">Ocena harmonizacji</div>
+            <h1 style="font-size:34px">${escapeHtml(melody.title)}</h1>
+          </div>
+          <div class="progress-card">
+            <div class="progress-row"><span>Postęp</span><span>${state.step + 1} / ${MELODIES.length}</span></div>
+            <div class="bar"><span style="width:${progressPercent()}%"></span></div>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="card section-card">
+            <h2>Materiały do odsłuchu i podglądu</h2>
+            <div class="stack">
+              <div class="box">
+                <div class="box-title">🎧 Audio</div>
+                ${renderAudio(melody)}
+              </div>
+              <div class="box">
+                <div class="box-title">📄 Zapis melodii</div>
+                ${renderPdf(melody)}
+              </div>
+            </div>
+          </div>
+          <div class="card section-card">
+            <h2>Ocena próbki</h2>
+            <div class="stack">
+              ${QUESTIONS.map((question, idx) => renderQuestionCard(melody.id, idx + 1, question, entry.ratings[idx + 1])).join('')}
+              <div class="question">
+                <div class="question-title">Czy Twoim zdaniem harmonizacja została wykonana przez człowieka?</div>
+                <div class="choice-grid two">
+                  ${['TAK', 'NIE'].map(v => `
+                    <label class="choice">
+                      <input type="radio" name="human-${melody.id}" value="${v}" ${entry.human === v ? 'checked' : ''} />
+                      <span>${v}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+              <div>
+                <label class="field-label" for="note-${melody.id}">Dodatkowe uwagi lub spostrzeżenia</label>
+                <textarea id="note-${melody.id}" placeholder="To pole jest opcjonalne.">${escapeHtml(entry.note || '')}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="actions" style="justify-content:space-between; margin-top:18px;">
+          <button class="secondary" id="prevButton">← Poprzednia</button>
+          <button class="primary" id="nextButton" ${canGoNext() ? '' : 'disabled'}>${state.step === MELODIES.length - 1 ? 'Przejdź do podsumowania' : 'Następna →'}</button>
+        </div>
+      `;
+
+      QUESTIONS.forEach((_, idx) => {
+        el.querySelectorAll(`input[name="rating-${melody.id}-${idx + 1}"]`).forEach(input => {
+          input.addEventListener('change', (e) => updateRating(melody.id, idx + 1, e.target.value));
+        });
+      });
+      el.querySelectorAll(`input[name="human-${melody.id}"]`).forEach(input => {
+        input.addEventListener('change', (e) => updateHuman(melody.id, e.target.value));
+      });
+      document.getElementById(`note-${melody.id}`).addEventListener('input', (e) => updateNote(melody.id, e.target.value));
+      document.getElementById('prevButton').addEventListener('click', prevStep);
+      document.getElementById('nextButton').addEventListener('click', nextStep);
+    }
+
+    function renderQuestionCard(melodyId, index, question, currentValue) {
+      return `
+        <div class="question">
+          <div class="question-title">${escapeHtml(question)}</div>
+          <div class="choice-grid">
+            ${['1','2','3','4','5'].map(value => `
+              <label class="choice">
+                <input type="radio" name="rating-${melodyId}-${index}" value="${value}" ${currentValue === value ? 'checked' : ''} />
+                <span>${value}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAudio(melody) {
+      if (!melody.audioUrl) {
+        return `<div class="placeholder">Tutaj wstaw link do MP3 albo pełny link SoundCloud w tablicy <code>MELODIES</code> na początku pliku.</div>`;
+      }
+      if (melody.audioType === 'soundcloud') {
+        return `
+          <iframe title="audio-${melody.id}" height="166" allow="autoplay" src="${soundCloudEmbed(melody.audioUrl)}"></iframe>
+          <div style="height:10px"></div>
+          <a href="${melody.audioUrl}" target="_blank" rel="noreferrer">Otwórz nagranie w nowej karcie</a>
+        `;
+      }
+      return `
+        <audio controls preload="none">
+          <source src="${melody.audioUrl}" />
+          Twoja przeglądarka nie obsługuje audio.
+        </audio>
+        <div style="height:10px"></div>
+        <a href="${melody.audioUrl}" target="_blank" rel="noreferrer">Otwórz plik audio</a>
+      `;
+    }
+
+    function renderPdf(melody) {
+      if (!melody.pdfUrl) {
+        return `<div class="placeholder">Tutaj wstaw link do PDF w tablicy <code>MELODIES</code>. Jeśli nie chcesz osadzać PDF, możesz zostawić sam link.</div>`;
+      }
+      return `
+        <iframe class="pdf" title="pdf-${melody.id}" src="${melody.pdfUrl}"></iframe>
+        <div style="height:10px"></div>
+        <a href="${melody.pdfUrl}" target="_blank" rel="noreferrer">Otwórz PDF w nowej karcie</a>
+      `;
+    }
+
+    function renderSummary() {
+      const el = document.getElementById('screen-summary');
+      el.innerHTML = `
+        <div class="card section-card">
+          <div class="kicker">Podsumowanie</div>
+          <h1 style="font-size:34px; margin-bottom:8px">Odpowiedzi gotowe</h1>
+          <p class="lead" style="font-size:16px; max-width: none;">Odpowiedzi są zapisane lokalnie w przeglądarce. Możesz je pobrać jako plik JSON albo CSV.</p>
+          <div style="height:20px"></div>
+          <div class="summary-grid">
+            <div class="summary-item"><div class="label">Grupa</div><div class="value">${escapeHtml(state.respondentType || 'brak')}</div></div>
+            <div class="summary-item"><div class="label">Ukończone melodie</div><div class="value">${completedCount()} / ${MELODIES.length}</div></div>
+            <div class="summary-item"><div class="label">Uwagi ogólne</div><div class="value">${state.generalNote ? 'dodane' : 'brak'}</div></div>
+          </div>
+          <label class="field-label" for="generalNote">Dodatkowe uwagi dotyczące całego testu</label>
+          <textarea id="generalNote" placeholder="Tutaj można wpisać uwagi końcowe.">${escapeHtml(state.generalNote || '')}</textarea>
+          <div class="actions">
+            <button class="primary" id="jsonBtn">Pobierz JSON</button>
+            <button class="secondary" id="csvBtn">Pobierz CSV</button>
+            <button class="secondary" id="backBtn">← Wróć do ostatniej melodii</button>
+            <button class="danger" id="resetBtn">Wyczyść wszystko</button>
+          </div>
+          <p class="footer-note">Żeby zbierać odpowiedzi od wielu osób do jednego miejsca, kolejny krok to podpięcie tej strony do formularza lub prostego backendu. Ta wersja jest idealna jako szybki prototyp i test UX.</p>
+        </div>
+      `;
+      document.getElementById('generalNote').addEventListener('input', (e) => {
+        state.generalNote = e.target.value;
+        saveState();
+      });
+      document.getElementById('jsonBtn').addEventListener('click', exportJSON);
+      document.getElementById('csvBtn').addEventListener('click', exportCSV);
+      document.getElementById('backBtn').addEventListener('click', () => { state.screen = 'melody'; state.step = MELODIES.length - 1; saveState(); render(); });
+      document.getElementById('resetBtn').addEventListener('click', resetSurvey);
+    }
+  </script>
+</body>
+</html>
